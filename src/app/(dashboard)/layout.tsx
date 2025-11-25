@@ -22,6 +22,18 @@ export default function DashboardLayout({
                 >
                   Dashboard
                 </Link>
+                <Link
+                  href="/form-templates"
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Form Templates
+                </Link>
+                <Link
+                  href="/telehealth-invites"
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Telehealth Invites
+                </Link>
               </nav>
             </div>
             <div className="text-sm text-gray-500">

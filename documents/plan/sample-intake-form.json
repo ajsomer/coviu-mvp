@@ -1,0 +1,473 @@
+{
+  "title": "Patient Intake Form",
+  "description": "Please complete all sections of this form before your appointment. Your information will be securely stored and used to prepare for your consultation.",
+  "logoPosition": "right",
+  "pages": [
+    {
+      "name": "personalDetails",
+      "title": "Personal Details",
+      "description": "Please verify and complete your personal information",
+      "elements": [
+        {
+          "type": "panel",
+          "name": "namePanel",
+          "title": "Name",
+          "elements": [
+            {
+              "type": "text",
+              "name": "firstName",
+              "title": "First Name",
+              "isRequired": true,
+              "maxLength": 100
+            },
+            {
+              "type": "text",
+              "name": "lastName",
+              "title": "Last Name",
+              "isRequired": true,
+              "maxLength": 100
+            },
+            {
+              "type": "text",
+              "name": "preferredName",
+              "title": "Preferred Name (if different)",
+              "maxLength": 100
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "name": "dateOfBirth",
+          "title": "Date of Birth",
+          "inputType": "date",
+          "isRequired": true
+        },
+        {
+          "type": "dropdown",
+          "name": "gender",
+          "title": "Gender",
+          "isRequired": true,
+          "choices": [
+            "Male",
+            "Female",
+            "Non-binary",
+            "Prefer not to say",
+            "Other"
+          ]
+        },
+        {
+          "type": "panel",
+          "name": "addressPanel",
+          "title": "Address",
+          "elements": [
+            {
+              "type": "text",
+              "name": "streetAddress",
+              "title": "Street Address",
+              "isRequired": true
+            },
+            {
+              "type": "text",
+              "name": "suburb",
+              "title": "Suburb",
+              "isRequired": true
+            },
+            {
+              "type": "dropdown",
+              "name": "state",
+              "title": "State",
+              "isRequired": true,
+              "choices": ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"]
+            },
+            {
+              "type": "text",
+              "name": "postcode",
+              "title": "Postcode",
+              "isRequired": true,
+              "inputType": "number",
+              "min": 800,
+              "max": 9999,
+              "validators": [
+                {
+                  "type": "regex",
+                  "regex": "^[0-9]{4}$",
+                  "text": "Please enter a valid 4-digit postcode"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "name": "phone",
+          "title": "Phone Number",
+          "inputType": "tel",
+          "isRequired": true,
+          "validators": [
+            {
+              "type": "regex",
+              "regex": "^[0-9\\s\\-\\+\\(\\)]{8,15}$",
+              "text": "Please enter a valid phone number"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "name": "email",
+          "title": "Email Address",
+          "inputType": "email",
+          "isRequired": true,
+          "validators": [
+            {
+              "type": "email",
+              "text": "Please enter a valid email address"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "medicareDetails",
+      "title": "Medicare & Health Fund",
+      "description": "Your Medicare and private health insurance details",
+      "elements": [
+        {
+          "type": "panel",
+          "name": "medicarePanel",
+          "title": "Medicare Card",
+          "elements": [
+            {
+              "type": "text",
+              "name": "medicareNumber",
+              "title": "Medicare Card Number",
+              "description": "10-digit number on your Medicare card",
+              "isRequired": true
+            },
+            {
+              "type": "text",
+              "name": "medicareIRN",
+              "title": "Individual Reference Number (IRN)",
+              "description": "The number next to your name on the card (1-9)",
+              "isRequired": true,
+              "inputType": "number",
+              "min": 1,
+              "max": 9
+            },
+            {
+              "type": "text",
+              "name": "medicareExpiry",
+              "title": "Expiry Date",
+              "description": "MM/YYYY format",
+              "isRequired": true
+            }
+          ]
+        },
+        {
+          "type": "boolean",
+          "name": "hasPrivateHealth",
+          "title": "Do you have private health insurance?",
+          "defaultValue": false
+        },
+        {
+          "type": "panel",
+          "name": "privateHealthPanel",
+          "title": "Private Health Insurance Details",
+          "visibleIf": "{hasPrivateHealth} = true",
+          "elements": [
+            {
+              "type": "text",
+              "name": "healthFundName",
+              "title": "Health Fund Name",
+              "isRequired": true
+            },
+            {
+              "type": "text",
+              "name": "healthFundMemberNumber",
+              "title": "Member Number",
+              "isRequired": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "emergencyContact",
+      "title": "Emergency Contact",
+      "description": "Please provide details of someone we can contact in case of emergency",
+      "elements": [
+        {
+          "type": "text",
+          "name": "emergencyContactName",
+          "title": "Full Name",
+          "isRequired": true
+        },
+        {
+          "type": "text",
+          "name": "emergencyContactRelationship",
+          "title": "Relationship to You",
+          "isRequired": true,
+          "placeholder": "e.g., Spouse, Parent, Sibling, Friend"
+        },
+        {
+          "type": "text",
+          "name": "emergencyContactPhone",
+          "title": "Phone Number",
+          "inputType": "tel",
+          "isRequired": true,
+          "validators": [
+            {
+              "type": "regex",
+              "regex": "^[0-9\\s\\-\\+\\(\\)]{8,15}$",
+              "text": "Please enter a valid phone number"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "medicalHistory",
+      "title": "Medical History",
+      "description": "Please provide relevant medical history to help us prepare for your appointment",
+      "elements": [
+        {
+          "type": "checkbox",
+          "name": "existingConditions",
+          "title": "Do you have any of the following conditions? (Select all that apply)",
+          "choices": [
+            "Diabetes",
+            "Heart Disease",
+            "High Blood Pressure",
+            "Asthma/Respiratory Conditions",
+            "Kidney Disease",
+            "Liver Disease",
+            "Cancer (current or history)",
+            "Thyroid Disorder",
+            "Epilepsy/Seizures",
+            "Mental Health Condition",
+            "Autoimmune Disorder",
+            "Blood Clotting Disorder"
+          ],
+          "hasOther": true,
+          "otherText": "Other (please specify)"
+        },
+        {
+          "type": "comment",
+          "name": "existingConditionsDetails",
+          "title": "Please provide details about any conditions selected above",
+          "visibleIf": "{existingConditions} notempty",
+          "rows": 3
+        },
+        {
+          "type": "boolean",
+          "name": "previousSurgeries",
+          "title": "Have you had any previous surgeries?",
+          "defaultValue": false
+        },
+        {
+          "type": "comment",
+          "name": "previousSurgeriesDetails",
+          "title": "Please list your previous surgeries with approximate dates",
+          "visibleIf": "{previousSurgeries} = true",
+          "rows": 3,
+          "placeholder": "e.g., Appendectomy - 2018, Knee replacement - 2020"
+        },
+        {
+          "type": "boolean",
+          "name": "familyHistory",
+          "title": "Is there any relevant family medical history?",
+          "description": "e.g., heart disease, cancer, diabetes in close relatives",
+          "defaultValue": false
+        },
+        {
+          "type": "comment",
+          "name": "familyHistoryDetails",
+          "title": "Please describe relevant family medical history",
+          "visibleIf": "{familyHistory} = true",
+          "rows": 3
+        }
+      ]
+    },
+    {
+      "name": "medications",
+      "title": "Current Medications",
+      "description": "List all medications you are currently taking, including prescriptions, over-the-counter medications, and supplements",
+      "elements": [
+        {
+          "type": "boolean",
+          "name": "takingMedications",
+          "title": "Are you currently taking any medications?",
+          "defaultValue": false
+        },
+        {
+          "type": "matrixdynamic",
+          "name": "medicationsList",
+          "title": "Please list your current medications",
+          "visibleIf": "{takingMedications} = true",
+          "columns": [
+            {
+              "name": "medicationName",
+              "title": "Medication Name",
+              "cellType": "text",
+              "isRequired": true
+            },
+            {
+              "name": "dosage",
+              "title": "Dosage",
+              "cellType": "text",
+              "placeholder": "e.g., 10mg"
+            },
+            {
+              "name": "frequency",
+              "title": "Frequency",
+              "cellType": "dropdown",
+              "choices": [
+                "Once daily",
+                "Twice daily",
+                "Three times daily",
+                "Four times daily",
+                "As needed",
+                "Weekly",
+                "Other"
+              ]
+            }
+          ],
+          "rowCount": 1,
+          "addRowText": "Add another medication",
+          "removeRowText": "Remove"
+        }
+      ]
+    },
+    {
+      "name": "allergies",
+      "title": "Allergies",
+      "description": "Please list any allergies you have",
+      "elements": [
+        {
+          "type": "boolean",
+          "name": "hasAllergies",
+          "title": "Do you have any known allergies?",
+          "defaultValue": false
+        },
+        {
+          "type": "checkbox",
+          "name": "allergyTypes",
+          "title": "What type of allergies do you have?",
+          "visibleIf": "{hasAllergies} = true",
+          "choices": [
+            "Medication allergies",
+            "Food allergies",
+            "Environmental allergies (pollen, dust, etc.)",
+            "Latex allergy",
+            "Contrast dye allergy",
+            "Anaesthesia reaction"
+          ]
+        },
+        {
+          "type": "comment",
+          "name": "allergyDetails",
+          "title": "Please list your specific allergies and reactions",
+          "visibleIf": "{hasAllergies} = true",
+          "isRequired": true,
+          "rows": 3,
+          "placeholder": "e.g., Penicillin - causes rash and swelling\nPeanuts - anaphylaxis"
+        }
+      ]
+    },
+    {
+      "name": "paymentDetails",
+      "title": "Payment Details",
+      "description": "Please provide your payment card details. Your card will only be charged after your appointment, and you will receive an itemised invoice.",
+      "elements": [
+        {
+          "type": "html",
+          "name": "paymentInfo",
+          "html": "<div class='payment-notice'><strong>Secure Payment</strong><p>Your card details are securely processed by Stripe. We do not store your full card number.</p><p>Your card will be charged the consultation fee after your appointment. You will receive an invoice via email.</p></div>"
+        },
+        {
+          "type": "text",
+          "name": "cardholderName",
+          "title": "Cardholder Name",
+          "description": "Name as it appears on the card",
+          "isRequired": true
+        },
+        {
+          "type": "html",
+          "name": "stripeCardElement",
+          "html": "<div id='stripe-card-element' class='stripe-element-container'></div><div id='stripe-card-errors' class='stripe-error'></div>"
+        },
+        {
+          "type": "boolean",
+          "name": "saveCardForFuture",
+          "title": "Save this card for future appointments",
+          "defaultValue": true
+        }
+      ]
+    },
+    {
+      "name": "consent",
+      "title": "Consent & Declaration",
+      "description": "Please read and acknowledge the following",
+      "elements": [
+        {
+          "type": "html",
+          "name": "consentInfo",
+          "html": "<div class='consent-text'><h4>Privacy & Data Collection</h4><p>The information you provide in this form will be used to:</p><ul><li>Prepare for your consultation with the specialist</li><li>Maintain your medical records</li><li>Process Medicare and health fund claims on your behalf</li><li>Contact you regarding your appointment</li></ul><p>Your information is stored securely and will not be shared with third parties except as required for your medical care or by law.</p></div>"
+        },
+        {
+          "type": "boolean",
+          "name": "consentPrivacy",
+          "title": "I consent to the collection and use of my personal and health information as described above",
+          "isRequired": true,
+          "validators": [
+            {
+              "type": "expression",
+              "expression": "{consentPrivacy} = true",
+              "text": "You must consent to proceed"
+            }
+          ]
+        },
+        {
+          "type": "boolean",
+          "name": "consentAccuracy",
+          "title": "I declare that the information I have provided is true and accurate to the best of my knowledge",
+          "isRequired": true,
+          "validators": [
+            {
+              "type": "expression",
+              "expression": "{consentAccuracy} = true",
+              "text": "You must confirm the accuracy of information"
+            }
+          ]
+        },
+        {
+          "type": "boolean",
+          "name": "consentPayment",
+          "title": "I authorise the clinic to charge my card for consultation fees and any agreed procedures after my appointment",
+          "isRequired": true,
+          "validators": [
+            {
+              "type": "expression",
+              "expression": "{consentPayment} = true",
+              "text": "You must authorise payment to proceed"
+            }
+          ]
+        },
+        {
+          "type": "signaturepad",
+          "name": "signature",
+          "title": "Signature",
+          "isRequired": true
+        }
+      ]
+    }
+  ],
+  "showProgressBar": "top",
+  "progressBarType": "questions",
+  "goNextPageAutomatic": false,
+  "showNavigationButtons": true,
+  "showPrevButton": true,
+  "showCompletedPage": true,
+  "completedHtml": "<div class='completion-message'><h2>Thank you!</h2><p>Your intake form has been submitted successfully.</p><p>We have received your information and will review it before your appointment.</p><p>You will receive a confirmation email shortly.</p></div>",
+  "requiredText": "*",
+  "questionErrorLocation": "bottom"
+}

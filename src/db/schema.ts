@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, date, timestamp, pgEnum, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, date, timestamp, pgEnum, boolean, jsonb } from 'drizzle-orm/pg-core';
 
 export const requestStatusEnum = pgEnum('request_status', [
   'pending',
@@ -14,6 +14,12 @@ export const priorityEnum = pgEnum('priority', [
   'normal',
   'high',
   'urgent'
+]);
+
+export const formRequestStatusEnum = pgEnum('form_request_status', [
+  'pending',
+  'completed',
+  'expired'
 ]);
 
 // Specialists table - doctors available at the clinic
@@ -68,9 +74,57 @@ export const statusHistory = pgTable('status_history', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// Notes history - tracks all notes added to a request
+export const notesHistory = pgTable('notes_history', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  requestId: uuid('request_id').references(() => appointmentRequests.id).notNull(),
+  note: text('note').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// Form templates - reusable form schemas created by staff
+export const formTemplates = pgTable('form_templates', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  schema: jsonb('schema').notNull(),
+  specialistId: uuid('specialist_id').references(() => specialists.id),
+  isDefault: boolean('is_default').default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Form requests - tracks forms sent to patients
+export const formRequests = pgTable('form_requests', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  appointmentRequestId: uuid('appointment_request_id').references(() => appointmentRequests.id).notNull(),
+  formTemplateId: uuid('form_template_id').references(() => formTemplates.id).notNull(),
+  token: varchar('token', { length: 64 }).unique().notNull(),
+  status: formRequestStatusEnum('status').notNull().default('pending'),
+  sentAt: timestamp('sent_at').defaultNow().notNull(),
+  completedAt: timestamp('completed_at'),
+  expiresAt: timestamp('expires_at'),
+});
+
+// Form submissions - patient responses
+export const formSubmissions = pgTable('form_submissions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  formRequestId: uuid('form_request_id').references(() => formRequests.id).notNull(),
+  data: jsonb('data').notNull(),
+  stripePaymentIntentId: varchar('stripe_payment_intent_id', { length: 255 }),
+  submittedAt: timestamp('submitted_at').defaultNow().notNull(),
+});
+
 // Type exports
 export type Specialist = typeof specialists.$inferSelect;
 export type NewSpecialist = typeof specialists.$inferInsert;
 export type AppointmentRequest = typeof appointmentRequests.$inferSelect;
 export type NewAppointmentRequest = typeof appointmentRequests.$inferInsert;
 export type StatusHistory = typeof statusHistory.$inferSelect;
+export type NotesHistory = typeof notesHistory.$inferSelect;
+export type FormTemplate = typeof formTemplates.$inferSelect;
+export type NewFormTemplate = typeof formTemplates.$inferInsert;
+export type FormRequest = typeof formRequests.$inferSelect;
+export type NewFormRequest = typeof formRequests.$inferInsert;
+export type FormSubmission = typeof formSubmissions.$inferSelect;
+export type NewFormSubmission = typeof formSubmissions.$inferInsert;

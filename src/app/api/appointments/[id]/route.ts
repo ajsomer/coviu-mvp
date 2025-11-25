@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { appointmentRequests, specialists, statusHistory } from '@/db/schema';
+import { appointmentRequests, specialists, statusHistory, notesHistory, formRequests, formTemplates, formSubmissions } from '@/db/schema';
 import { updateRequestSchema } from '@/lib/validations';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 
 // GET - Get single appointment request
 export async function GET(
@@ -47,6 +47,45 @@ export async function GET(
       );
     }
 
+    // Fetch notes history
+    const notes = await db
+      .select()
+      .from(notesHistory)
+      .where(eq(notesHistory.requestId, id))
+      .orderBy(desc(notesHistory.createdAt));
+
+    // Fetch form requests and their submissions
+    const formRequestsData = await db
+      .select({
+        id: formRequests.id,
+        token: formRequests.token,
+        status: formRequests.status,
+        sentAt: formRequests.sentAt,
+        completedAt: formRequests.completedAt,
+        expiresAt: formRequests.expiresAt,
+        templateId: formTemplates.id,
+        templateName: formTemplates.name,
+        templateDescription: formTemplates.description,
+      })
+      .from(formRequests)
+      .innerJoin(formTemplates, eq(formRequests.formTemplateId, formTemplates.id))
+      .where(eq(formRequests.appointmentRequestId, id))
+      .orderBy(desc(formRequests.sentAt));
+
+    // Fetch submissions for completed forms
+    const formRequestsWithSubmissions = await Promise.all(
+      formRequestsData.map(async (fr) => {
+        if (fr.status === 'completed') {
+          const [submission] = await db
+            .select()
+            .from(formSubmissions)
+            .where(eq(formSubmissions.formRequestId, fr.id));
+          return { ...fr, submission };
+        }
+        return { ...fr, submission: null };
+      })
+    );
+
     return NextResponse.json({
       data: {
         ...result,
@@ -55,6 +94,8 @@ export async function GET(
           name: result.specialistName,
           specialty: result.specialistSpecialty,
         },
+        notesHistory: notes,
+        formRequests: formRequestsWithSubmissions,
       },
     });
   } catch (error) {
@@ -109,9 +150,25 @@ export async function PATCH(
       });
     }
 
+    // If notes provided, add to notes history
+    if (validatedData.notes && validatedData.notes.trim()) {
+      await db.insert(notesHistory).values({
+        requestId: id,
+        note: validatedData.notes.trim(),
+      });
+    }
+
+    // Fetch updated notes history
+    const notes = await db
+      .select()
+      .from(notesHistory)
+      .where(eq(notesHistory.requestId, id))
+      .orderBy(desc(notesHistory.createdAt));
+
     return NextResponse.json({
       success: true,
       data: updatedRequest,
+      notesHistory: notes,
     });
   } catch (error) {
     console.error('Error updating appointment request:', error);

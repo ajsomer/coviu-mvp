@@ -16,6 +16,32 @@ import {
 } from '@/components/ui/select';
 import { StatusBadge } from '@/components/dashboard/status-badge';
 import { PriorityBadge } from '@/components/dashboard/priority-badge';
+import { IntakeFormsSection } from '@/components/dashboard/IntakeFormsSection';
+
+interface NoteEntry {
+  id: string;
+  note: string;
+  createdAt: string;
+}
+
+interface FormSubmission {
+  id: string;
+  data: Record<string, unknown>;
+  submittedAt: string;
+}
+
+interface FormRequestData {
+  id: string;
+  token: string;
+  status: string;
+  sentAt: string;
+  completedAt: string | null;
+  expiresAt: string | null;
+  templateId: string;
+  templateName: string;
+  templateDescription: string | null;
+  submission: FormSubmission | null;
+}
 
 interface AppointmentRequest {
   id: string;
@@ -39,6 +65,8 @@ interface AppointmentRequest {
   status: string;
   priority: string;
   notes: string | null;
+  notesHistory: NoteEntry[];
+  formRequests: FormRequestData[];
   createdAt: string;
   updatedAt: string;
 }
@@ -51,6 +79,16 @@ function formatDate(dateString: string) {
   });
 }
 
+function formatDateTime(dateString: string) {
+  return new Date(dateString).toLocaleString('en-AU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export default function RequestDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const router = useRouter();
@@ -59,7 +97,9 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
   const [updating, setUpdating] = useState(false);
   const [status, setStatus] = useState('');
   const [priority, setPriority] = useState('');
-  const [notes, setNotes] = useState('');
+  const [newNote, setNewNote] = useState('');
+  const [notesHistory, setNotesHistory] = useState<NoteEntry[]>([]);
+  const [formRequests, setFormRequests] = useState<FormRequestData[]>([]);
 
   useEffect(() => {
     async function fetchRequest() {
@@ -70,7 +110,8 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
           setRequest(data.data);
           setStatus(data.data.status);
           setPriority(data.data.priority);
-          setNotes(data.data.notes || '');
+          setNotesHistory(data.data.notesHistory || []);
+          setFormRequests(data.data.formRequests || []);
         }
       } catch (error) {
         console.error('Failed to fetch request:', error);
@@ -82,18 +123,35 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
     fetchRequest();
   }, [resolvedParams.id]);
 
+  const refreshRequest = async () => {
+    try {
+      const response = await fetch(`/api/appointments/${resolvedParams.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setRequest(data.data);
+        setFormRequests(data.data.formRequests || []);
+      }
+    } catch (error) {
+      console.error('Failed to refresh request:', error);
+    }
+  };
+
   const handleUpdate = async () => {
     setUpdating(true);
     try {
       const response = await fetch(`/api/appointments/${resolvedParams.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, priority, notes }),
+        body: JSON.stringify({ status, priority, notes: newNote }),
       });
 
       if (response.ok) {
         const data = await response.json();
         setRequest(prev => prev ? { ...prev, ...data.data } : null);
+        if (data.notesHistory) {
+          setNotesHistory(data.notesHistory);
+        }
+        setNewNote('');
         alert('Request updated successfully');
       }
     } catch (error) {
@@ -160,6 +218,39 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                 <Label className="text-muted-foreground">Phone</Label>
                 <p className="font-medium">{request.phone}</p>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Intake Forms */}
+          <IntakeFormsSection
+            appointmentRequestId={request.id}
+            patientName={`${request.firstName} ${request.lastName}`}
+            patientEmail={request.email}
+            formRequests={formRequests}
+            onRefresh={refreshRequest}
+          />
+
+          {/* Notes History */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Notes</CardTitle>
+              <CardDescription>History of notes for this request</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {notesHistory.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No notes yet</p>
+              ) : (
+                <div className="space-y-4">
+                  {notesHistory.map((entry) => (
+                    <div key={entry.id} className="border-l-2 border-gray-200 pl-4 py-2">
+                      <p className="text-sm text-gray-900">{entry.note}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {formatDateTime(entry.createdAt)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -279,8 +370,8 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
               <div className="space-y-2">
                 <Label>Notes</Label>
                 <Textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
                   placeholder="Add notes about this request..."
                   rows={4}
                 />
