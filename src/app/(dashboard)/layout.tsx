@@ -1,10 +1,17 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+
+  const isActive = (path: string) => pathname?.startsWith(path);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -18,21 +25,27 @@ export default function DashboardLayout({
               <nav className="flex gap-4">
                 <Link
                   href="/dashboard"
-                  className="text-gray-600 hover:text-gray-900"
+                  className={pathname === '/dashboard' ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900'}
                 >
                   Dashboard
                 </Link>
                 <Link
                   href="/form-templates"
-                  className="text-gray-600 hover:text-gray-900"
+                  className={isActive('/form-templates') || isActive('/form-builder') ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900'}
                 >
                   Form Templates
                 </Link>
                 <Link
                   href="/telehealth-invites"
-                  className="text-gray-600 hover:text-gray-900"
+                  className={isActive('/telehealth-invites') ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900'}
                 >
                   Telehealth Invites
+                </Link>
+                <Link
+                  href="/run-sheet"
+                  className={isActive('/run-sheet') ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900'}
+                >
+                  Run Sheet
                 </Link>
               </nav>
             </div>

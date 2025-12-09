@@ -1,4 +1,5 @@
-import { pgTable, uuid, varchar, text, date, timestamp, pgEnum, boolean, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, date, timestamp, pgEnum, boolean, jsonb, real } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
 
 export const requestStatusEnum = pgEnum('request_status', [
   'pending',
@@ -115,6 +116,126 @@ export const formSubmissions = pgTable('form_submissions', {
   submittedAt: timestamp('submitted_at').defaultNow().notNull(),
 });
 
+// ============================================
+// DAILY RUN SHEET - Screenshot Parsing Feature
+// ============================================
+
+export const runSheetStatusEnum = pgEnum('run_sheet_status', [
+  'draft',      // Still uploading/cropping screenshots
+  'reviewing',  // User is reviewing parsed data
+  'confirmed'   // Run sheet is finalized
+]);
+
+export const telehealthInviteStatusEnum = pgEnum('telehealth_invite_status', [
+  'queued',    // Waiting to be sent
+  'sent',      // Successfully sent
+  'failed',    // Failed to send
+]);
+
+// Clinicians extracted from screenshots (separate from specialists)
+export const runSheetClinicians = pgTable('run_sheet_clinicians', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 255 }).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// Daily run sheet - one per day
+export const runSheets = pgTable('run_sheets', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  date: date('date').notNull(),
+  status: runSheetStatusEnum('status').notNull().default('draft'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Screenshots uploaded for a run sheet
+export const runSheetScreenshots = pgTable('run_sheet_screenshots', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  runSheetId: uuid('run_sheet_id').references(() => runSheets.id).notNull(),
+  originalUrl: text('original_url').notNull(),
+  croppedUrl: text('cropped_url'),
+  uploadedAt: timestamp('uploaded_at').defaultNow().notNull(),
+  processedAt: timestamp('processed_at'),
+  ocrRawResponse: jsonb('ocr_raw_response'),
+});
+
+// Parsed appointments from screenshots
+export const runSheetAppointments = pgTable('run_sheet_appointments', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  runSheetId: uuid('run_sheet_id').references(() => runSheets.id).notNull(),
+  screenshotId: uuid('screenshot_id').references(() => runSheetScreenshots.id),
+  clinicianId: uuid('clinician_id').references(() => runSheetClinicians.id),
+  patientName: varchar('patient_name', { length: 255 }),
+  patientPhone: varchar('patient_phone', { length: 50 }),
+  appointmentTime: varchar('appointment_time', { length: 20 }),
+  appointmentType: varchar('appointment_type', { length: 255 }),
+  confidence: real('confidence'),
+  isManualEntry: boolean('is_manual_entry').default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Telehealth invites - tracks SMS invites for appointments
+export const telehealthInvites = pgTable('telehealth_invites', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  runSheetAppointmentId: uuid('run_sheet_appointment_id').references(() => runSheetAppointments.id),
+  phoneNumber: varchar('phone_number', { length: 50 }).notNull(),
+  clinicianId: uuid('clinician_id').references(() => runSheetClinicians.id),
+  appointmentDate: date('appointment_date').notNull(),
+  appointmentTime: varchar('appointment_time', { length: 20 }).notNull(),
+  status: telehealthInviteStatusEnum('status').notNull().default('queued'),
+  queuedAt: timestamp('queued_at').defaultNow().notNull(),
+  sentAt: timestamp('sent_at'),
+  failedAt: timestamp('failed_at'),
+  failureReason: text('failure_reason'),
+});
+
+// Run sheet relations
+export const runSheetsRelations = relations(runSheets, ({ many }) => ({
+  screenshots: many(runSheetScreenshots),
+  appointments: many(runSheetAppointments),
+}));
+
+export const runSheetScreenshotsRelations = relations(runSheetScreenshots, ({ one, many }) => ({
+  runSheet: one(runSheets, {
+    fields: [runSheetScreenshots.runSheetId],
+    references: [runSheets.id],
+  }),
+  appointments: many(runSheetAppointments),
+}));
+
+export const runSheetAppointmentsRelations = relations(runSheetAppointments, ({ one, many }) => ({
+  runSheet: one(runSheets, {
+    fields: [runSheetAppointments.runSheetId],
+    references: [runSheets.id],
+  }),
+  screenshot: one(runSheetScreenshots, {
+    fields: [runSheetAppointments.screenshotId],
+    references: [runSheetScreenshots.id],
+  }),
+  clinician: one(runSheetClinicians, {
+    fields: [runSheetAppointments.clinicianId],
+    references: [runSheetClinicians.id],
+  }),
+  telehealthInvites: many(telehealthInvites),
+}));
+
+export const runSheetCliniciansRelations = relations(runSheetClinicians, ({ many }) => ({
+  appointments: many(runSheetAppointments),
+  telehealthInvites: many(telehealthInvites),
+}));
+
+export const telehealthInvitesRelations = relations(telehealthInvites, ({ one }) => ({
+  appointment: one(runSheetAppointments, {
+    fields: [telehealthInvites.runSheetAppointmentId],
+    references: [runSheetAppointments.id],
+  }),
+  clinician: one(runSheetClinicians, {
+    fields: [telehealthInvites.clinicianId],
+    references: [runSheetClinicians.id],
+  }),
+}));
+
 // Type exports
 export type Specialist = typeof specialists.$inferSelect;
 export type NewSpecialist = typeof specialists.$inferInsert;
@@ -128,3 +249,11 @@ export type FormRequest = typeof formRequests.$inferSelect;
 export type NewFormRequest = typeof formRequests.$inferInsert;
 export type FormSubmission = typeof formSubmissions.$inferSelect;
 export type NewFormSubmission = typeof formSubmissions.$inferInsert;
+export type RunSheet = typeof runSheets.$inferSelect;
+export type NewRunSheet = typeof runSheets.$inferInsert;
+export type RunSheetScreenshot = typeof runSheetScreenshots.$inferSelect;
+export type RunSheetAppointment = typeof runSheetAppointments.$inferSelect;
+export type NewRunSheetAppointment = typeof runSheetAppointments.$inferInsert;
+export type RunSheetClinician = typeof runSheetClinicians.$inferSelect;
+export type TelehealthInvite = typeof telehealthInvites.$inferSelect;
+export type NewTelehealthInvite = typeof telehealthInvites.$inferInsert;

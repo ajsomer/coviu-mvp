@@ -8,6 +8,20 @@
       "when": 1764037267765,
       "tag": "0000_nice_centennial",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1764571853087,
+      "tag": "0001_dazzling_ben_urich",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1765320291563,
+      "tag": "0002_big_sunfire",
+      "breakpoints": true
     }
   ]
 }
