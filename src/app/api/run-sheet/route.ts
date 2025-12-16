@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       runSheet = created;
     }
 
-    return NextResponse.json(runSheet);
+    return NextResponse.json(runSheet || null);
   } catch (error) {
     console.error('Error fetching run sheet:', error);
     return NextResponse.json({ error: 'Failed to fetch run sheet' }, { status: 500 });

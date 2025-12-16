@@ -25,6 +25,9 @@ interface Appointment {
   clinicianId: string | null;
   clinicianName: string | null;
   inviteStatus: InviteStatus;
+  inviteId?: string | null;
+  scheduledFor?: string | null;
+  sentAt?: string | null;
 }
 
 interface RunSheet {
@@ -33,10 +36,16 @@ interface RunSheet {
   status: 'draft' | 'reviewing' | 'confirmed';
 }
 
+function getLocalDateString() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function RunSheetSidebar() {
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
+  const [selectedDate, setSelectedDate] = useState<string>(getLocalDateString);
   const [selectedClinicianId, setSelectedClinicianId] = useState<string>('all');
   const [runSheet, setRunSheet] = useState<RunSheet | null>(null);
   const [clinicians, setClinicians] = useState<Clinician[]>([]);
@@ -93,6 +102,33 @@ export function RunSheetSidebar() {
     }
   };
 
+  const handleSendNow = async (inviteId: string) => {
+    try {
+      await fetch(`/api/telehealth-invites/${inviteId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'sent' }),
+      });
+      // Refresh to show updated status
+      fetchData(selectedDate);
+    } catch (error) {
+      console.error('Error sending invite:', error);
+    }
+  };
+
+  const handleRemoveAppointment = async (appointmentId: string) => {
+    if (!confirm('Remove this appointment from the run sheet?')) return;
+    try {
+      await fetch(`/api/run-sheet/appointments/${appointmentId}`, {
+        method: 'DELETE',
+      });
+      // Refresh to show updated list
+      fetchData(selectedDate);
+    } catch (error) {
+      console.error('Error removing appointment:', error);
+    }
+  };
+
   const handleReUpload = async () => {
     if (!confirm('This will delete the current run sheet. Continue?')) return;
     try {
@@ -129,7 +165,7 @@ export function RunSheetSidebar() {
 
   if (loading) {
     return (
-      <Card className="w-80">
+      <Card className="w-80 gap-0 py-0">
         <CardContent className="py-8 text-center">
           <p className="text-gray-500">Loading...</p>
         </CardContent>
@@ -138,13 +174,13 @@ export function RunSheetSidebar() {
   }
 
   return (
-    <Card className="w-80 flex flex-col h-full">
+    <Card className="w-80 flex flex-col h-full gap-0 py-0">
       {/* Header */}
-      <CardHeader className="pb-2 border-b">
-        <CardTitle className="text-center text-lg font-bold tracking-wide">
+      <div className="flex items-center justify-center py-3 px-6 border-b">
+        <span className="text-lg font-bold tracking-wide">
           RUN SHEET
-        </CardTitle>
-      </CardHeader>
+        </span>
+      </div>
 
       {/* Date Navigation */}
       <div className="px-4 py-3 border-b">
@@ -187,6 +223,8 @@ export function RunSheetSidebar() {
                     key={appt.id}
                     appointment={appt}
                     onSendInvite={() => handleSendInvite(appt.id)}
+                    onSendNow={appt.inviteId ? () => handleSendNow(appt.inviteId!) : undefined}
+                    onRemove={() => handleRemoveAppointment(appt.id)}
                   />
                 ))}
               </div>

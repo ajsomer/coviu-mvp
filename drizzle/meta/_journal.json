@@ -22,6 +22,20 @@
       "when": 1765320291563,
       "tag": "0002_big_sunfire",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1765320855589,
+      "tag": "0003_fine_leader",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1765844503278,
+      "tag": "0004_unique_timeslip",
+      "breakpoints": true
     }
   ]
 }

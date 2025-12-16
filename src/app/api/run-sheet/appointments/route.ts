@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Transform appointments to include invite status
+    // Transform appointments to include invite status and scheduling info
     const appointmentsWithStatus = appointments.map((appt) => {
       const latestInvite = includeInviteStatus && appt.telehealthInvites?.length > 0
         ? appt.telehealthInvites.sort((a, b) =>
@@ -39,6 +39,10 @@ export async function GET(request: NextRequest) {
         ...appt,
         clinicianName: appt.clinician?.name || null,
         inviteStatus: latestInvite ? latestInvite.status : 'none',
+        inviteId: latestInvite?.id || null,
+        scheduledFor: latestInvite?.scheduledFor || null,
+        sentAt: latestInvite?.sentAt || null,
+        invitePatientName: latestInvite?.patientName || null,
       };
     });
 
